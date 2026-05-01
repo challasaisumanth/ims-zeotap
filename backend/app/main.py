@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import time
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,15 +17,13 @@ from app.ingestion.debounce import debounce_engine
 from app.workflow.alerting import get_alert_strategy
 from app.middleware.rate_limiter import limiter
 from app.api import signals, workitems, health
+from app.api.metrics import router as metrics_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 async def process_signals_worker():
-    """
-    Background worker: drains the in-memory queue into MongoDB + PostgreSQL.
-    This runs forever and is the ONLY writer to the DB from signals.
-    """
     while True:
         batch = signal_queue.pop_batch(500)
         if not batch:
@@ -38,7 +36,6 @@ async def process_signals_worker():
         for signal in batch:
             component_id = signal["component_id"]
             should_create, existing_id = await debounce_engine.should_create_work_item(component_id)
-
             work_item_id = existing_id
 
             if should_create and not existing_id:
@@ -81,8 +78,8 @@ async def process_signals_worker():
             except Exception as e:
                 logger.error(f"MongoDB insert failed: {e}")
 
+
 async def throughput_logger():
-    """Prints signals/sec to console every 5 seconds — as required."""
     while True:
         await asyncio.sleep(5)
         stats = signal_queue.throughput()
@@ -91,6 +88,7 @@ async def throughput_logger():
             f"Received: {stats['received']} | Processed: {stats['processed']} | "
             f"Queue: {stats['queue_size']}"
         )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -103,16 +101,18 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("IMS Backend shutting down")
 
+
 app = FastAPI(title="Incident Management System", version="1.0.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
+
 app.include_router(signals.router)
 app.include_router(workitems.router)
 app.include_router(health.router)
+app.include_router(metrics_router)
