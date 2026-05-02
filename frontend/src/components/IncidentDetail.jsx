@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import RCAForm from './RCAForm'
+import SignalChart from './SignalChart'
 
 const NEXT_STATE = {
   OPEN: 'INVESTIGATING',
@@ -8,15 +9,9 @@ const NEXT_STATE = {
   RESOLVED: null,
 }
 
-const SEV_COLOR = {
-  P0: '#ff4444', P1: '#ff9500', P2: '#ffd600', P3: '#00c8ff'
-}
-const STATE_COLOR = {
-  OPEN: '#ff4444', INVESTIGATING: '#ff9500', RESOLVED: '#ffd600', CLOSED: '#00ff88'
-}
-const STATE_ICON = {
-  OPEN: '◉', INVESTIGATING: '◎', RESOLVED: '◌', CLOSED: '●'
-}
+const SEV_COLOR = { P0: '#ff4444', P1: '#ff9500', P2: '#ffd600', P3: '#00c8ff' }
+const STATE_COLOR = { OPEN: '#ff4444', INVESTIGATING: '#ff9500', RESOLVED: '#ffd600', CLOSED: '#00ff88' }
+const STATE_ICON = { OPEN: '◉', INVESTIGATING: '◎', RESOLVED: '◌', CLOSED: '●' }
 
 function StatCard({ label, value, color }) {
   return (
@@ -92,14 +87,12 @@ export default function IncidentDetail({ itemId, onRefresh }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <span style={{
                 fontSize: 9, padding: '3px 8px', borderRadius: 2,
-                background: `${sevColor}22`,
-                border: `1px solid ${sevColor}66`,
+                background: `${sevColor}22`, border: `1px solid ${sevColor}66`,
                 color: sevColor, letterSpacing: '0.15em', fontWeight: 600
               }}>{item.severity}</span>
               <span style={{
                 fontSize: 9, padding: '3px 8px', borderRadius: 2,
-                background: `${stateColor}15`,
-                border: `1px solid ${stateColor}44`,
+                background: `${stateColor}15`, border: `1px solid ${stateColor}44`,
                 color: stateColor, letterSpacing: '0.12em'
               }}>{STATE_ICON[item.state]} {item.state}</span>
               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em' }}>{item.component_type}</span>
@@ -112,13 +105,7 @@ export default function IncidentDetail({ itemId, onRefresh }) {
             </div>
           </div>
           {item.mttr_minutes != null && (
-            <div style={{
-              border: '1px solid rgba(0,255,136,0.3)',
-              borderRadius: 4,
-              padding: '12px 20px',
-              textAlign: 'center',
-              background: 'rgba(0,255,136,0.05)'
-            }}>
+            <div style={{ border: '1px solid rgba(0,255,136,0.3)', borderRadius: 4, padding: '12px 20px', textAlign: 'center', background: 'rgba(0,255,136,0.05)' }}>
               <div style={{ fontSize: 9, color: 'rgba(0,255,136,0.5)', letterSpacing: '0.15em', marginBottom: 4 }}>MTTR</div>
               <div style={{ fontSize: 28, fontWeight: 600, color: '#00ff88' }}>{Math.round(item.mttr_minutes)}m</div>
             </div>
@@ -133,14 +120,11 @@ export default function IncidentDetail({ itemId, onRefresh }) {
           <StatCard label="MTTR" value={item.mttr_minutes ? `${Math.round(item.mttr_minutes)}m` : 'OPEN'} color={item.mttr_minutes ? '#00ff88' : 'rgba(255,255,255,0.3)'} />
         </div>
 
+        {/* ✅ NEW: Signal Timeline Chart */}
+        <SignalChart itemId={itemId} signalCount={item.signal_count} />
+
         {/* State timeline */}
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid #1a1f2e',
-          borderRadius: 4,
-          padding: '14px 16px',
-          marginBottom: 20
-        }}>
+        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1a1f2e', borderRadius: 4, padding: '14px 16px', marginBottom: 20 }}>
           <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 12 }}>INCIDENT LIFECYCLE</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
             {['OPEN', 'INVESTIGATING', 'RESOLVED', 'CLOSED'].map((s, i) => {
@@ -153,8 +137,7 @@ export default function IncidentDetail({ itemId, onRefresh }) {
                 <div key={s} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                     <div style={{
-                      width: 28, height: 28,
-                      borderRadius: '50%',
+                      width: 28, height: 28, borderRadius: '50%',
                       border: `1px solid ${c}`,
                       background: isDone ? 'rgba(0,255,136,0.1)' : isActive ? `${c}15` : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -169,8 +152,7 @@ export default function IncidentDetail({ itemId, onRefresh }) {
                     <div style={{
                       flex: 1, height: 1,
                       background: isDone ? '#00ff88' : 'rgba(255,255,255,0.1)',
-                      margin: '0 4px',
-                      marginBottom: 18
+                      margin: '0 4px', marginBottom: 18
                     }} />
                   )}
                 </div>
@@ -185,18 +167,13 @@ export default function IncidentDetail({ itemId, onRefresh }) {
             onClick={advance}
             disabled={advancing}
             style={{
-              padding: '10px 20px',
-              background: 'transparent',
-              border: '1px solid rgba(0,255,136,0.4)',
-              borderRadius: 4,
-              color: '#00ff88',
-              fontSize: 11,
+              padding: '10px 20px', background: 'transparent',
+              border: '1px solid rgba(0,255,136,0.4)', borderRadius: 4,
+              color: '#00ff88', fontSize: 11,
               fontFamily: "'JetBrains Mono', monospace",
               letterSpacing: '0.1em',
               cursor: advancing ? 'not-allowed' : 'pointer',
-              opacity: advancing ? 0.5 : 1,
-              marginBottom: 20,
-              transition: 'all 0.15s'
+              opacity: advancing ? 0.5 : 1, marginBottom: 20, transition: 'all 0.15s'
             }}
             onMouseEnter={e => { if (!advancing) e.target.style.background = 'rgba(0,255,136,0.08)' }}
             onMouseLeave={e => e.target.style.background = 'transparent'}
@@ -215,13 +192,7 @@ export default function IncidentDetail({ itemId, onRefresh }) {
 
       {/* Submitted RCA */}
       {item.rca && (
-        <div style={{
-          background: 'rgba(0,255,136,0.04)',
-          border: '1px solid rgba(0,255,136,0.2)',
-          borderRadius: 4,
-          padding: 16,
-          marginBottom: 24
-        }}>
+        <div style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.2)', borderRadius: 4, padding: 16, marginBottom: 24 }}>
           <div style={{ fontSize: 9, color: 'rgba(0,255,136,0.5)', letterSpacing: '0.15em', marginBottom: 12 }}>✓ RCA SUBMITTED</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
@@ -253,35 +224,18 @@ export default function IncidentDetail({ itemId, onRefresh }) {
         <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 10 }}>
           RAW SIGNALS — {item.signal_count} TOTAL {item.raw_signals?.length < item.signal_count ? `(SHOWING ${item.raw_signals?.length})` : ''}
         </div>
-        <div style={{
-          border: '1px solid #1a1f2e',
-          borderRadius: 4,
-          maxHeight: 280,
-          overflowY: 'auto',
-          background: 'rgba(0,0,0,0.3)'
-        }}>
+        <div style={{ border: '1px solid #1a1f2e', borderRadius: 4, maxHeight: 280, overflowY: 'auto', background: 'rgba(0,0,0,0.3)' }}>
           {(item.raw_signals || []).length === 0 && (
             <div style={{ padding: 16, fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>No signals found</div>
           )}
           {(item.raw_signals || []).map((s, i) => (
-            <div key={i} style={{
-              padding: '8px 14px',
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
-              display: 'flex',
-              gap: 12,
-              alignItems: 'flex-start',
-              fontSize: 11
-            }}>
+            <div key={i} style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', gap: 12, alignItems: 'flex-start', fontSize: 11 }}>
               <span style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0, fontSize: 10 }}>
                 {new Date(s.timestamp).toLocaleTimeString()}
               </span>
-              <span style={{
-                color: SEV_COLOR[s.severity] || '#888',
-                flexShrink: 0,
-                fontSize: 9,
-                letterSpacing: '0.1em',
-                marginTop: 1
-              }}>[{s.severity}]</span>
+              <span style={{ color: SEV_COLOR[s.severity] || '#888', flexShrink: 0, fontSize: 9, letterSpacing: '0.1em', marginTop: 1 }}>
+                [{s.severity}]
+              </span>
               <span style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, fontFamily: "'JetBrains Mono', monospace" }}>
                 {s.error_message}
               </span>
